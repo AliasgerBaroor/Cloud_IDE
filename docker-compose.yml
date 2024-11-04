@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  ide:
+    image: next-ide # my next image
+    depends_on:
+      - reverse-proxy
+    labels:
+    - traefik.http.routers.ide.rule=Host(`ide.localhost`)
+  reverse-proxy:
+    image: traefik
+    command: --api.insecure=true --providers.docker
+    ports:
+        - "8080:8080" # Dashboard (optional)
+        - "80:80"     # HTTP traffic
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+  calling: 
+    image: audio-calling # audio-calling service
+    depends_on:
+      - reverse-proxy
+    labels:
+    - traefik.http.routers.calling.rule=Host(`calling.localhost`)
+  user-container:
+    image: user-container # isolated user container
+    depends_on:
+      - reverse-proxy
+    labels:
+      - traefik.http.routers.user-container.rule=Host(`user-container.localhost`)
