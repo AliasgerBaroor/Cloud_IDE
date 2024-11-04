@@ -21,7 +21,7 @@ services:
       - reverse-proxy
     labels:
     - traefik.http.routers.calling.rule=Host(`calling.localhost`)
-  user-container:
+  server:
     image: user-container # isolated user container
     depends_on:
       - reverse-proxy

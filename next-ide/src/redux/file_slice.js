@@ -15,8 +15,11 @@ const fileSlice = createSlice({
         file.code = action.payload.code;
       }
     },
+    removeFile: (state, action) => {
+      return state.filter(file => file.name !== action.payload.name);
+    },
   },
 });
 
-export const { addFile, updateFileCode } = fileSlice.actions;
+export const { addFile, updateFileCode, removeFile } = fileSlice.actions;
 export default fileSlice.reducer;

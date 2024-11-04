@@ -1,8 +1,11 @@
 "use client";
-import { Box, Flex, Text } from "@chakra-ui/react";
-import { FaFolder, FaJsSquare } from "react-icons/fa";
-import { BiChevronDown, BiChevronRight } from "react-icons/bi";
 import { useEffect, useState } from "react";
+import { Box, Flex, Text } from "@chakra-ui/react";
+
+import { FaPython, FaReact } from "react-icons/fa6";
+import { SiTypescript, SiJavascript } from "react-icons/si";
+import { BiChevronDown, BiChevronRight } from "react-icons/bi";
+
 import socket from "@/services/SOCKET/Socket";
 import { getTree } from "@/services/REST/Porject.Service";
 import { useDispatch, useSelector } from "react-redux";
@@ -71,6 +74,8 @@ const Tree = () => {
 
   const renderTree = (node : TreeNode, path : string  = "") => {
     const currentPath = path ? `${path}/${node.name}` : node.name;
+    const fileName = node.name.split("/").pop();
+    const fileExtension = fileName?.split(".").pop();
     return (
       <Box key={currentPath} ml={4}>
         <Flex alignItems="center" onClick={() => {
@@ -83,7 +88,7 @@ const Tree = () => {
           {node.children ? (
             expanded[currentPath] ? <BiChevronDown /> : <BiChevronRight />
           ) : (
-            <FaJsSquare />
+             fileExtension === "js" ? <SiJavascript /> : fileExtension === "jsx" || fileExtension === "tsx" ? <FaReact /> : fileExtension === "ts" ? <SiTypescript /> : fileExtension === "py" ? <FaPython /> : null 
           )}
           <Text ms={2}>{node.name}</Text>
         </Flex>
@@ -108,7 +113,7 @@ const Tree = () => {
     }
   };
   return (
-    <Box width="15%" p={4}>
+    <Box width="15%" p={4}  bg={"#1c2333"} color={"#ffffff"} borderRight="1px solid white">
      {fileTree ? renderTree(fileTree) : null}
     </Box>
   );

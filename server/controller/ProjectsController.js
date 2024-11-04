@@ -1,3 +1,4 @@
+require('dotenv').config("../");
 const routes = require("express").Router();
 const app = require("express");
 const Docker = require("dockerode")
@@ -8,53 +9,37 @@ const fs = require('fs/promises');
 const pathLib = require('path');
 const { Server: SocketServer } = require('socket.io');
 const User = require("../models/User")
+const pty = require('node-pty');
 
-const docker = new Docker()
+// Spawning a terminal process
+const ptyProcess = pty.spawn("cmd.exe", [], {
+  name: 'xterm-color',
+  cols: 80,
+  rows: 30,
+  cwd: process.env.INIT_CWD + '/__USER',
+  env: process.env,
+});
+// const docker = new Docker()
 const server = http.createServer(app);
 const io = new SocketServer(server, {
-    cors: {
-      origin: '*',
-    },
-  });
+  cors: {
+    origin: '*',
+  },
+});
 
   chokidar.watch('./__USER').on('all', (event, path) => {
     io.emit("file:refresh", path);
   });
 
+  ptyProcess.onData((data) => {
+    io.emit("terminal:data", data);
+  });
+  
+
+  
 io.on('connection', (socket) => {
     console.log('A user connected:', socket.id);
-
-    socket.on('terminal:write', async ({ containerId, data }) => {
-        const container = docker.getContainer(containerId);
-        container.exec({
-            AttachStdout: true,
-            AttachStderr: true,
-            Tty: true,
-            Cmd: ["/bin/sh", "-c", data]
-        }, (err, exec) => {
-            if (err) {
-                console.error('Error creating exec:', err);
-                return;
-            }
-
-            exec.start({ detach: false, tty: true }, (err, stream) => {
-                if (err) {
-                    console.error('Error starting exec:', err);
-                    return;
-                }
-
-
-                stream.on('data', (chunk) => {
-                    const output = chunk.toString();
-                    socket.emit('terminal:data', output); // Send data back to the client
-                });
-
-                stream.on('end', () => {
-                    console.log('Stream ended');
-                });
-            });
-        });
-    });
+    // containerId, 
 
     socket.on('file:change', async ({ path, content }, ack) => {
       const fullPath = path;
@@ -80,6 +65,10 @@ io.on('connection', (socket) => {
       }
   });
   
+    // Terminal write event handling
+    socket.on("terminal:write", (data) => {
+      ptyProcess.write(data);
+    });
 });
 
 const  PORT_TO_CONTAINERS = {}
