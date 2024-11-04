@@ -1,0 +1,5 @@
+# Dockerfile.user
+FROM my-node-base
+
+COPY create-next-app.sh create-next-app.sh
+RUN chmod +x create-next-app.sh

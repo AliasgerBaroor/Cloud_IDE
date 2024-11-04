@@ -19,7 +19,7 @@ const ptyProcess = pty.spawn("cmd.exe", [], {
   cwd: process.env.INIT_CWD + '/__USER',
   env: process.env,
 });
-// const docker = new Docker()
+const docker = new Docker()
 const server = http.createServer(app);
 const io = new SocketServer(server, {
   cors: {
@@ -77,7 +77,7 @@ const  CONTAINERS_TO_PORT = {}
 routes.put('/open/editor', async (req, res) => {
     if(! req.headers) return;
     const _id = req.headers.authorization
-    let { projectName, language, framework, repoType, stats, image = "node:latest" } = req.body
+    let { projectName, language, framework, repoType, stats, image } = req.body
 
     if(projectName.trim() === "") {
         projectName = generateSlug()
@@ -105,7 +105,7 @@ routes.put('/open/editor', async (req, res) => {
         const container = await docker.createContainer({ 
             Image: image,
             name : projectName,
-            Cmd : ["sh"],
+            Cmd: ['/usr/local/bin/create-next-app.sh', projectName],
             AttachStdout : true,
             Tty : true,
             HostConfig : {
@@ -127,14 +127,15 @@ routes.put('/open/editor', async (req, res) => {
         createdAt: new Date(),
         lastUpdatedAt: new Date(),
       };
-    await User.updateOne({_id}, { $push: { projects: newProject } })
+    // await User.updateOne({_id}, { $push: { projects: newProject } })
 
-    const response_fetch_project = await User.findOne({_id})
+    // const response_fetch_project = await User.findOne({_id})
 
     PORT_TO_CONTAINERS[availablePort] = container.id;
     CONTAINERS_TO_PORT[container.id] = availablePort
 
-res.status(200).send({user : response_fetch_project, container_id : container.id})
+res.status(200).send({ container_id : container.id })
+// res.status(200).send({user : response_fetch_project, container_id : container.id})
 })
 
 routes.get("/files/content", async (req, res) => {

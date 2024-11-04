@@ -88,7 +88,7 @@ const CodeEditor = () => {
     };
 
     return (
-        <Box width={"35%"} height="100vh">
+        <Box width={"53%"} height="100vh">
             {openFile.length > 0 ? (
                 <Tabs.Root defaultValue={"0"} variant="plain" height="100%">
                     <Tabs.List bg="bg.muted" rounded="l3" p="1">

@@ -58,11 +58,13 @@ const CreateProjectPage = () => {
   const [isSubmited, setIsSubmited] = useState(false)
   const [projectsLeft, setProjectsLeft] = useState(0)
   const [project, setProject] = useState(0)
+  const [loader, setLoader] = useState(false)
 
   const handleCreate = async () => {
+    setLoader(true)
     const newProject = {
       projectName : title,
-      image : template,
+      image : template === "next" ? "node" : template,
       language : template,
       repoType : repoType,
       stats : {
@@ -72,13 +74,14 @@ const CreateProjectPage = () => {
     }
 
     const response = await createProject(newProject, "671773ad4649cbf1dd60c386")
-    if(response.status === 200) {
-      const project_local = response.data
-      setProjectsLeft(project_local.user.projects.length)
-      setProject(project_local.user)
-      router.push(`/editor/${project_local.user.email}/${project_local.container_id}`)
+    // if(response.status === 200) {
+    // setLoader(false)
+    //   const project_local = response.data
+    //   setProjectsLeft(project_local.user.projects.length)
+    //   setProject(project_local.user)
+    //   router.push(`/editor/${project_local.user.email}/"671773ad4649cbf1dd60c386"/${project_local.container_id}`)
 
-    }
+    // }
   }
   return (
     <Box mt={4}>
@@ -187,7 +190,7 @@ const CreateProjectPage = () => {
 
           </DialogBody>
           <DialogFooter>
-            <Button width={"50%"} onClick={handleCreate}><RiAddFill /> Create project</Button>
+            <Button width={"50%"} onClick={handleCreate} loading={loader ? true : false} loadingText="Creating..."><RiAddFill /> Create project</Button>
           </DialogFooter>
           <Box>
   <DialogCloseTrigger />
@@ -209,7 +212,7 @@ const frameworks = createListCollection({
       downloads: "5000", 
     },
     { 
-      label: "Node.js", 
+      label: "HTML/CSS/JS", 
       value: "node", 
       description: "A runtime environment for executing JavaScript code server-side.", 
       icon: "RiNodejsLine", 

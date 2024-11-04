@@ -113,7 +113,7 @@ const Tree = () => {
     }
   };
   return (
-    <Box width="15%" p={4}  bg={"#1c2333"} color={"#ffffff"} borderRight="1px solid white">
+    <Box width="15%" height="100vh" p={4}  bg={"#1c2333"} color={"#ffffff"}>
      {fileTree ? renderTree(fileTree) : null}
     </Box>
   );
