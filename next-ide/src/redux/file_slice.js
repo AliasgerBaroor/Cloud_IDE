@@ -18,8 +18,11 @@ const fileSlice = createSlice({
     removeFile: (state, action) => {
       return state.filter(file => file.name !== action.payload.name);
     },
+    createNewState: (state, action) => {
+      return action.payload ;
+    },
   },
 });
 
-export const { addFile, updateFileCode, removeFile } = fileSlice.actions;
+export const { addFile, updateFileCode, removeFile, createNewState } = fileSlice.actions;
 export default fileSlice.reducer;

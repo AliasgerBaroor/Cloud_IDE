@@ -1,5 +1,5 @@
 const routes = require("express").Router()
 
-routes.use("/project", require("../controller/ProjectsController"))
+routes.use("/api/v1/project", require("../controller/ProjectsController"))
 
 module.exports = routes

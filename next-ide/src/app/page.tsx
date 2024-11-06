@@ -1,9 +1,8 @@
-import CreateProject from "./components/modals/create_project";
 
 const App = () => {
 return (
   <>
-  <CreateProject />
+  <h1>I am landing page</h1>
   </>
 )
 }

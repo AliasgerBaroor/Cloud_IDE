@@ -1,8 +1,18 @@
 import { useCallback, useEffect, useState } from "react";
 
-import { Box, Tabs, List, Flex, Kbd } from "@chakra-ui/react";
+import {
+    DialogActionTrigger,
+    DialogBody,
+    DialogContent,
+    DialogFooter,
+    DialogHeader,
+    DialogRoot,
+    DialogTitle
+} from "@/components/ui/dialog";
+
+import { Box, Tabs, List, Flex, Kbd, Button } from "@chakra-ui/react";
 import { Status } from "@/components/ui/status";
-import { EmptyState } from "@/components/ui/empty-state"
+import { EmptyState } from "@/components/ui/empty-state";
 
 import AceEditor from "react-ace";
 import "ace-builds/src-noconflict/mode-javascript";
@@ -12,11 +22,11 @@ import { FaPython, FaReact, FaXmark } from "react-icons/fa6";
 import { SiTypescript, SiJavascript } from "react-icons/si";
 import { BsCodeSlash } from "react-icons/bs";
 
-
 import socket from "@/services/SOCKET/Socket";
 import { getFileContent } from "@/services/REST/Porject.Service";
 import { useDispatch, useSelector } from "react-redux";
 import { removeFile } from "@/redux/file_slice";
+import { addSelectedFile } from "@/redux/selected_file_slice";
 
 interface fileTypes {
     name: string;
@@ -30,23 +40,37 @@ interface AcknowledgementTypes {
 
 const CodeEditor = () => {
     const openFile = useSelector((state: { file: fileTypes[] }) => state.file);
-    const dispatch = useDispatch()
+    const selectedFile = useSelector((state: { selectedFile: string }) => state.selectedFile);
+    const dispatch = useDispatch();
 
     const [fileContents, setFileContents] = useState<Record<string, string>>({});
+    const [originalFileContents, setOriginalFileContents] = useState<Record<string, string>>({});
     const [fileStatus, setFileStatus] = useState<Record<string, boolean>>({});
-    const [selectedFile, setSelectedFile] = useState<string | undefined>(undefined);
+    const [activeTabIndex, setActiveTabIndex] = useState("0");
+    const [unsavedFile, setUnsavedFile] = useState<string | null>(null);
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+    // useEffect(() => {
+    //     if (openFile.length > 0) {
+    //         dispatch(addSelectedFile(openFile[0].name))
+    //     }
+    // }, [openFile]);
+   
 
     useEffect(() => {
-        if (openFile.length > 0) {
-            setSelectedFile(openFile[0].name);
+        const selectedIndex = openFile.findIndex((file) => file.name === selectedFile);
+        if (selectedIndex !== -1) {
+            setActiveTabIndex(String(selectedIndex));
         }
-    }, [openFile]);
-
+    }, [selectedFile, openFile]);
+    
     const getFileContentFun = useCallback(async () => {
         if (!selectedFile) return;
         const response = await getFileContent(selectedFile);
-        setFileContents((prev) => ({ ...prev, [selectedFile]: response.data.content }));
-        setFileStatus((prev) => ({ ...prev, [selectedFile]: true })); // Mark as saved after loading
+        const content = response.data.content;
+        setFileContents((prev) => ({ ...prev, [selectedFile]: content }));
+        setOriginalFileContents((prev) => ({ ...prev, [selectedFile]: content }));
+        setFileStatus((prev) => ({ ...prev, [selectedFile]: true }));
     }, [selectedFile]);
 
     useEffect(() => {
@@ -54,6 +78,8 @@ const CodeEditor = () => {
     }, [getFileContentFun, selectedFile]);
 
     useEffect(() => {
+        if (isDialogOpen) return;
+
         const timer = setTimeout(() => {
             if (fileStatus[selectedFile!] === false) {
                 socket.emit(
@@ -72,25 +98,52 @@ const CodeEditor = () => {
         }, 3000);
 
         return () => clearTimeout(timer);
-    }, [fileContents, selectedFile, fileStatus]);
+    }, [fileContents, selectedFile, fileStatus, isDialogOpen]);
 
     const handleFileClick = (fileName: string) => {
-        setSelectedFile(fileName);
+        dispatch(addSelectedFile(fileName))
     };
 
     const handleEditorChange = (newValue: string) => {
         setFileContents((prev) => ({ ...prev, [selectedFile!]: newValue }));
-        setFileStatus((prev) => ({ ...prev, [selectedFile!]: false })); // Mark as unsaved
+        setFileStatus((prev) => ({ ...prev, [selectedFile!]: false }));
     };
 
     const handleFileClose = (fileName: string) => {
-        dispatch(removeFile({ name: fileName }));
+        if (fileStatus[fileName] === false) {
+            setUnsavedFile(fileName);
+            setIsDialogOpen(true);
+        } else {
+            dispatch(removeFile({ name: fileName }));
+        }
+    };
+
+    const handleSave = () => {
+        socket.emit("file:change", { path: unsavedFile, content: fileContents[unsavedFile!] }, (ack: AcknowledgementTypes) => {
+            if (ack.status === "success") {
+                setFileStatus((prev) => ({ ...prev, [unsavedFile!]: true }));
+                dispatch(removeFile({ name: unsavedFile! }));
+                setIsDialogOpen(false);
+                setUnsavedFile(null);
+            } else {
+                alert(`Error: ${ack.message}`);
+            }
+        });
+    };
+
+    const handleCancel = () => {
+        if (unsavedFile) {
+            setFileContents((prev) => ({ ...prev, [unsavedFile]: originalFileContents[unsavedFile] }));
+            dispatch(removeFile({ name: unsavedFile }));
+        }
+        setIsDialogOpen(false);
+        setUnsavedFile(null);
     };
 
     return (
         <Box width={"53%"} height="100vh">
             {openFile.length > 0 ? (
-                <Tabs.Root defaultValue={"0"} variant="plain" height="100%">
+                <Tabs.Root value={activeTabIndex} variant="plain" height="100%">
                     <Tabs.List bg="bg.muted" rounded="l3" p="1">
                         {openFile.map((file: fileTypes, index: number) => {
                             const fileName = file.name.split("/").pop();
@@ -113,7 +166,6 @@ const CodeEditor = () => {
                                     {fileName}{" "}
                                     {!fileStatus[file.name] && <Status value="info" />}
                                     <FaXmark onClick={() => handleFileClose(file.name)} />
-
                                 </Tabs.Trigger>
                             );
                         })}
@@ -153,7 +205,6 @@ const CodeEditor = () => {
                         }
                         title=""
                     >
-                        {/* description="Try adjusting your search" */}
                         <List.Root gap={3}>
                             <List.Item display={"flex"} alignItems={"center"}>Open new empty file: <Kbd ms={2}>Ctrl + n</Kbd></List.Item>
                             <List.Item display={"flex"} alignItems={"center"}>Open extension tab: <Kbd ms={2}>Ctrl + e</Kbd></List.Item>
@@ -164,7 +215,23 @@ const CodeEditor = () => {
                     </EmptyState>
                 </Flex>
             )}
-
+            <DialogRoot open={isDialogOpen} onOpenChange={(details) => setIsDialogOpen(details.open)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Save {unsavedFile && unsavedFile.split("/").pop()}?</DialogTitle>
+                    </DialogHeader>
+                    <DialogBody>
+                        Would you like to save your changes to <b>{unsavedFile && unsavedFile.split("/").pop()}</b>? 
+                        Click Save to confirm, or Cancel to close the file without saving.
+                    </DialogBody>
+                    <DialogFooter>
+                        <DialogActionTrigger asChild>
+                            <Button variant="outline" onClick={handleCancel}>Cancel</Button>
+                        </DialogActionTrigger>
+                        <Button onClick={handleSave}>Save</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </DialogRoot>
         </Box>
     );
 };

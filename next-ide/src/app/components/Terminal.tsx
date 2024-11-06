@@ -8,6 +8,7 @@ import { Tabs, Box} from "@chakra-ui/react"
 
 import socket from "@/services/SOCKET/Socket"
 import { VscTerminal, VscTerminalCmd } from "react-icons/vsc"
+import Console from "./Console"
 
 interface TerminalTypes {
   containerId: string;
@@ -60,7 +61,9 @@ const Terminal: React.FC<TerminalTypes> = ({ containerId }) => {
       <Tabs.Content value="cmd">
         <div id="terminal" ref={terminalRef}/>
       </Tabs.Content>
-      <Tabs.Content value="console" color={"#ffffff"}>Output Console</Tabs.Content>
+      <Tabs.Content value="console" color={"#ffffff"}>
+        <Console />
+      </Tabs.Content>
     </Tabs.Root>
 
     </Box>

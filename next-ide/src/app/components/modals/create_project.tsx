@@ -74,14 +74,14 @@ const CreateProjectPage = () => {
     }
 
     const response = await createProject(newProject, "671773ad4649cbf1dd60c386")
-    // if(response.status === 200) {
-    // setLoader(false)
-    //   const project_local = response.data
-    //   setProjectsLeft(project_local.user.projects.length)
-    //   setProject(project_local.user)
-    //   router.push(`/editor/${project_local.user.email}/"671773ad4649cbf1dd60c386"/${project_local.container_id}`)
+    if(response.status === 200) {
+    setLoader(false)
+      const project_local = response.data
+      setProjectsLeft(project_local.user.projects.length)
+      setProject(project_local.user)
+      router.push(`/editor/${project_local.user.email}/"671773ad4649cbf1dd60c386"/${project_local.container_id}`)
 
-    // }
+    }
   }
   return (
     <Box mt={4}>
